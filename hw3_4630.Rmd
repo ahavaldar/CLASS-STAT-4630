@@ -1,0 +1,174 @@
+---
+title: "Homework 3"
+author: "Akhil Havaldar"
+date: "10/11/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+```{r}
+library(boot)
+library(MASS)
+library(ipred)
+
+x <- c(70, 75, 80, 80, 85, 90)    # creating data vectors
+y <- c(75, 82, 80, 86, 90, 91)
+mse <- vector("numeric", 6)       # initializing empty MSE vector
+for (i in 1:6){         # loop through all values in vector
+  xval <- x[i]          # storing the validation x and y
+  yval <- y[i]
+  xtrain <- x[-match(xval, x)]  # dropping the validation x and y from training data
+  ytrain <- y[! y %in% yval]
+  lm <- lm(ytrain~xtrain)       # fitting model
+  pred <- lm$coefficients[1] + lm$coefficients[2]*xval   # predictions
+  error <- (yval - pred)^2        # calculating MSE for each prediction
+  mse[i] <- error                 # storing values
+}
+
+mse_test <- mean(mse)     # taking mean of MSE's to find test MSE
+print(mse_test)           # 9.054487
+
+# df <- data.frame(x =c(70, 75, 80, 80, 85, 90),
+# y = c(75, 82, 80, 86, 90, 91))
+# result.lin<-glm(y ~ x, data = df, family="gaussian")
+# loocv.lin<-boot::cv.glm(df,result.lin)
+# loocv.lin$delta
+```
+
+## Question 2)
+```{r}
+gpa <- c(3.68, 3.42, 3.23, 3.87, 3.91, 3.67, 2.89, 3.14, 3.70, 3.56, 3.49, 3.02, 3.16, 3.76, 3.41)
+load("hw3_bootstrap_samples.RData")
+boot.samples
+
+# a) 
+quant <- quantile(gpa)
+iqr.gpa <- quant[4] - quant[2]    # calculating IQR by q3-q1
+#0.495 
+
+#b) 
+iqr.boot <- array(0,50)    # initializing array
+for (i in 1:50){
+  q <- quantile(boot.samples[,i])      # finding the quantiles for each boot sample
+  iq <- q[4] - q[2]                      # calculating iqr
+  iqr.boot[i] <- iq                      
+}
+
+print(sd(iqr.boot)) #0.1367592
+
+#c) 
+delta <- iqr.boot - iqr.gpa      # calculating delta
+conf <- quantile(delta, c(0.04,0.96))       # calculating 92% CI
+ci <- c(iqr.gpa-conf[2], iqr.gpa-conf[1])
+print(ci)         # (0.3184, 0.7706)
+
+```
+### d) 
+- To improve estimates, we would have to increase sample size, and increase the number of bootstrap samples. 
+
+
+
+## Question 6
+```{r}
+library(ISLR2)
+dat <- Wage
+
+#a) 
+samp.mean <- mean(dat$wage)
+samp.sd <- sd(dat$wage)
+print(samp.mean)            # 111.7036
+print(samp.sd)              # 41.7286
+
+#b) 
+samp.se <- samp.sd/(sqrt(nrow(dat)))
+print(samp.se)               # 0.7618564
+
+#c) 
+t.mult <- qt(0.975, df=2999)
+lower <- samp.mean - (t.mult * samp.se)
+upper <- samp.mean + (t.mult * samp.se)
+ci <- c(lower, upper)
+print(ci)                 # (110.2098 113.1974)
+
+#d.i) 
+set.seed(4630)
+boot.10 <- replicate(10, sample(dat$wage, replace=TRUE))
+
+#d.ii)
+mean.boot.10 <- array(0,10)    # initializing array
+for (i in 1:10){
+  m <- mean(boot.10[,i])      # finding the mean for each boot 
+  mean.boot.10[i] <- m      
+}
+
+#d.iii)
+se.boot.10 <- sd(mean.boot.10)
+print(se.boot.10)           # 0.89869
+```
+
+### d.iv)
+- The two values are relatively similar. In this instance, I would increase the number of bootstrap samples to improve the SE.
+
+
+```{r}
+#e.100)
+set.seed(4630)
+boot.100 <- replicate(100, sample(dat$wage, replace=TRUE))
+mean.boot.100 <- array(0,100)    # initializing array
+for (i in 1:100){
+  m <- mean(boot.100[,i])      # finding the mean for each boot 
+  mean.boot.100[i] <- m      
+}
+
+se.boot.100 <- sd(mean.boot.100)
+print(se.boot.100)           # 0.8897307
+
+#e.1000)
+set.seed(4630)
+boot.1000 <- replicate(1000, sample(dat$wage, replace=TRUE))
+
+mean.boot.1000 <- array(0,1000)    # initializing array
+for (i in 1:1000){
+  m <- mean(boot.1000[,i])      # finding the mean for each boot 
+  mean.boot.1000[i] <- m      
+}
+
+se.boot.1000 <- sd(mean.boot.1000)
+print(se.boot.1000)           # 0.8021534
+
+
+#e.10000)
+set.seed(4630)
+boot.10000 <- replicate(10000, sample(dat$wage, replace=TRUE))
+
+mean.boot.10000 <- array(0,10000)    # initializing array
+for (i in 1:10000){
+  m <- mean(boot.10000[,i])      # finding the mean for each boot 
+  mean.boot.10000[i] <- m      
+}
+
+se.boot.10000 <- sd(mean.boot.10000)
+print(se.boot.10000)           # 0.7700513
+```
+- When looking at the different bootstrap SE in relation to the sample SE, we can see that the bootstrap estimate gets closer and closer to the true value in (6b). With B=10000, the SE is only 0.01 off the actual SE.
+
+
+## f) 
+- Since the values of SE, as the bootstrap sizes get larger, converge to the estimation calculated in (6b) we know that we calculated the SE in (6b) correctly.
+
+
+```{r}
+#g) 
+set.seed(4630)
+delta <- mean.boot.10000 - samp.mean      # calculating delta
+conf <- quantile(delta, c(0.025,0.975))       # calculating 95% CI
+ci <- c(samp.mean-conf[2], samp.mean-conf[1])
+print(ci)         # (110.1883,113.1947) 
+```
+- We can see that the bootstrap CI is very close to the CI we found from the sample. 
+
+

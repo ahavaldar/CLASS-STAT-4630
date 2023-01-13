@@ -1,0 +1,108 @@
+---
+title: "project4_regtree"
+author: "Akhil Havaldar"
+date: "11/9/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## a) 
+- Need to change the quality column to a factor.
+- Need to rename columns to remove spaces from the variable names
+
+## b) 
+```{r}
+library(readr)
+library(tree)
+library(janitor)
+
+wine <- read_csv("wine.csv")
+wine$quality <- factor(wine$quality)
+wine <- clean_names(wine)       # removes spaces from names
+
+set.seed(4630)
+sample.data<-sample.int(nrow(wine), floor(0.5*nrow(wine)), replace = F)
+train<-wine[sample.data, ]
+test<-wine[-sample.data, ]
+
+y.test<-test[,"alcohol"]
+```
+
+## b - output of summary function
+```{r}
+tree1 <- tree(alcohol~. , train)
+summary(tree1)
+```
+## b - terminal nodes
+- there are 13 terminal nodes
+
+## b - predictors used
+- density, fixed acidity, residual sugar, suplhates, quality, and citric acid
+
+## b - graph
+```{r}
+plot(tree1)
+text(tree1, cex=0.6) 
+```
+## b - test mse
+```{r}
+tree1.pred<-predict(tree1, newdata =test)
+mse.tree1 <- mean((tree1.pred-y.test$alcohol)^2)
+print(mse.tree1) 
+```
+## c - Pruned tree
+```{r}
+set.seed(4630)
+cv.wine<-cv.tree(tree1, K=10)
+cv.wine
+plot(cv.wine$size, cv.wine$dev,type='b')
+
+trees.num.wine<-cv.wine$size[which.min(cv.wine$dev)]
+trees.num.wine
+
+tree.full<-tree::tree(alcohol~., data = train)
+prune.full<-tree::prune.tree(tree.full, best=trees.num.wine)
+summary(prune.full)
+```
+## c - graph
+```{r}
+plot(prune.full)
+text(prune.full, cex=0.5)
+```
+
+## c - test mse
+```{r}
+tree.prune.pred<-predict(prune.full, newdata =test)
+mse.tree2 <- mean((tree.prune.pred-y.test$alcohol)^2)
+print(mse.tree1) 
+```
+
+## d - random forest
+```{r}
+library(randomForest) 
+rf<-randomForest::randomForest(alcohol~., data=train, mtry=3,importance=TRUE)
+rf
+
+importance(rf)
+varImpPlot(rf)
+```
+
+## d- test mse
+```{r}
+rf.pred<-predict(rf, newdata =test)
+mse.rf <- mean((rf.pred-y.test$alcohol)^2)
+print(mse.rf) 
+```
+
+## e - table
+```{r}
+out <- data.frame(mse.tree1, mse.tree2, mse.rf)
+colnames(out) <- c("MSE.RecBinary", "MSE.Pruned", "MSE.RandomForest")
+out
+```
+
+- Main conclusions found in PDF 
+

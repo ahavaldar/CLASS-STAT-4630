@@ -1,0 +1,175 @@
+---
+title: "hw4_4630"
+author: "Akhil Havaldar"
+date: "11/4/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Question 5
+```{r}
+Data <- read.table("students2.txt", header=TRUE)
+
+Data <- Data[,-1]
+
+# Factors
+Data$Gender <-factor(Data$Gender)
+Data$Smoke <- factor(Data$Smoke)
+Data$Marijuan <- factor(Data$Marijuan)
+Data$DrivDrnk <- factor(Data$DrivDrnk)
+```
+
+## a) 
+```{r}
+set.seed(2013)
+sample.data <- sample.int(nrow(Data), floor(.50*nrow(Data)), replace = F)
+train <- Data[sample.data, ]
+test <- Data[-sample.data, ]
+```
+
+## b) 
+```{r}
+result <- lm(GPA~., data=train)
+summary(result)
+
+y.test <- test[,"GPA"]
+yhat.ols <- predict(result, newdata = test)
+mse.ols <- mean((y.test - yhat.ols)^2)
+mse.ols
+```
+
+## c) 
+```{r}
+tree.result<-tree::tree(GPA~., data=train)
+summary(tree.result)
+
+plot(tree.result)
+text(tree.result, cex=0.6, pretty=0)
+```
+- The tree has 11 terminal nodes. 
+
+## d) 
+```{r}
+yhat <- predict(tree.result, newdata=test)
+mse <- mean((y.test-yhat)^2)
+mse
+```
+- Recursive binary test MSE is 0.3057565
+
+## e) 
+```{r}
+set.seed(1)
+cv.gpa <- tree::cv.tree(tree.result, K=10)
+cv.gpa
+
+trees.num <- cv.gpa$size[which.min(cv.gpa$dev)]
+trees.num
+
+prune<-tree::prune.tree(tree.result, best=trees.num)
+prune
+```
+- With pruning, 2 terminal nodes gives us the smallest deviance.
+
+## f) 
+```{r}
+plot(prune)
+text(prune, cex=0.6, pretty=0)
+```
+- StudyHrs is the most important predictor of GPA. Students who study less than 11 hours a week are predicted to have a GPA of 2.898. Students who study more than 11 hours a week are predicted to have a GPA of 3.222.
+
+## g) 
+```{r}
+yhat.prune <- predict(prune, newdata=test)
+mse.prune <- mean((y.test-yhat.prune)^2)
+mse.prune
+```
+- Pruned test MSE is 0.2170533.
+
+## h)
+```{r}
+library(randomForest)
+set.seed(2)
+
+bag.gpa<-randomForest(GPA~., data=train, mtry=7, importance=TRUE)
+bag.gpa
+
+# test mse
+yhat.bag <- predict(bag.gpa, newdata=test)
+mse.bag <- mean((y.test-yhat.bag)^2)
+mse.bag
+
+# importance
+randomForest::importance(bag.gpa)
+randomForest::varImpPlot(bag.gpa)
+```
+- Test MSE with bagging is 0.2671621. StudyHrs is by far the most important variable as seen from the plot. 
+
+## i) 
+```{r}
+set.seed(2)
+rf.gpa <- randomForest(GPA~., data=train, mtry=3,importance=TRUE)
+rf.gpa
+
+yhat.rf<-predict(rf.gpa, newdata=test)
+mse.rf<-mean((y.test-yhat.rf)^2)
+mse.rf
+
+randomForest::importance(rf.gpa)
+randomForest::varImpPlot(rf.gpa)
+```
+- The test MSE is 0.2389143 which is lower than the previous example with bagging. Studyhrs is still the most important variable as seen from the plot. 
+
+## j) 
+```{r}
+library(gbm)
+set.seed(2)
+boost.gpa <- gbm(GPA~., data=train, distribution="gaussian", n.trees=5000,
+                 interaction.depth=1, shrinkage=0.0001)
+
+yhat.boost <- predict(boost.gpa, newdata=test, n.trees=5000, interaction.depth=1,
+                      shrinkage=0.0001)
+
+mse.boost<-mean((yhat.boost-y.test)^2)
+mse.boost
+
+summary(boost.gpa)
+```
+- Test MSE with boosting is 0.202228. This is lower than both previous examples with bagging and random forest. StudyHrs is still by far the most important predictor as seen from the plot. 
+
+## k) 
+```{r}
+c(mse.ols, mse, mse.prune, mse.bag, mse.boost)
+```
+- OLS had the lowest test MSE with 0.1962592. For tree based methods, boosting had the lowest overall test mse with 0.2022280.
+
+## l) 
+- StudyHrs was by far the most important predictor variable among all tree based methods. However in OLS, StudyHrs was shown to be insignificant. 
+
+
+
+
+
+
+
+
+# Question 1
+- a) flexibility decreases
+- b) 
+- c) test mse decreases initially then starts to increase
+- d) var decreases
+- e) bias increases   
+- f) remains constant
+
+# Question 2
+- a) 50.44
+- b) 58.86
+- c) 52.80
+
+# Question 3
+- football : 6
+- basketball : 9
+- Basketball will be predicted
+
+

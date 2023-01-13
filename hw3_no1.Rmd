@@ -1,0 +1,39 @@
+---
+title: 'hw3 #1'
+author: "Akhil Havaldar"
+date: "10/11/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Question 1
+```{r}
+library(boot)
+library(MASS)
+library(ipred)
+
+x <- c(70, 75, 80, 80, 85, 90)    # creating data vectors
+y <- c(75, 82, 80, 86, 90, 91)
+mse <- vector("numeric", 6)       # initializing empty MSE vector
+for (i in 1:6){         # loop through all values in vector
+  xval <- x[i]          # storing the validation x and y
+  yval <- y[i]
+  xtrain <- x[-match(xval, x)]  # dropping the validation x and y from training data
+  ytrain <- y[! y %in% yval]
+  lm <- lm(ytrain~xtrain)       # fitting model
+  pred <- lm$coefficients[1] + lm$coefficients[2]*xval   # predictions
+  error <- (yval - pred)^2        # calculating MSE for each prediction
+  mse[i] <- error                 # storing values
+}
+
+mse_test <- mean(mse)     # taking mean of MSE's to find test MSE
+print(mse_test)           # 9.054487
+
+# df <- data.frame(x =c(70, 75, 80, 80, 85, 90),
+# y = c(75, 82, 80, 86, 90, 91))
+# result.lin<-glm(y ~ x, data = df, family="gaussian")
+# loocv.lin<-boot::cv.glm(df,result.lin)
+# loocv.lin$delta
+```

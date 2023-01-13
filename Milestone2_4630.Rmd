@@ -1,0 +1,121 @@
+---
+title: "Group 17: Project Milestone 2"
+author: 
+  - "Hannah Douglas (hcd6tc)"
+  - "Akhil Havaldar (ash2sfp)"
+  - "Skye Jung (hsj5sn)"
+  - "Nathan Park (ngp7ce)"
+date: "9/21/2022"
+output: 
+  pdf_document:
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Section 1: Group Expectations Agreement
+1) How to maintain a create and maintain a positive group environment:
+    - When there are disagreements, group members will listen to each other’s thoughts patiently and respectfully and not try to force their own thoughts.
+    - Ensure that there is always respect for all group members and positive communication.
+    - Set commonly agreed upon deadlines in advance for individuals to get work done by. This will ensure accountability and individual responsibility for work. 
+    - Ensure communication regarding if an individual cannot complete assigned work on time, asking for help if this problem arises.
+    - Not blaming any individuals for making mistakes or falling behind but being encouraging and helping members improve where needed.
+    - We will revisit this document after each milestone to make sure everything is running smoothly and members are adhering to guidelines.
+
+2) Process
+    - Mode of communication
+        - We will primarily communicate through iMessage about deadlines, meetings and anything else project related. We will use Google Docs to share and collaborate on documents. We will share things such as datasets through email. 
+    - Scheduling meetings outside of class
+        - Scheduling meetings will be done via iMessage. We will ensure that there is a common time that works for all group members throughout the week. Members who cannot attend meetings physically will be expected to join on Zoom (if possible) and still contribute.
+    - Conducting meetings
+        - Meetings will be conducted in a way where everyone gets a chance to express their ideas before moving forward. We will also make sure that every group member is on the same page regarding future work that needs to be done and work that we completed during the meeting.
+    - Assign tasks
+        - We will take into account each person’s strengths and assign tasks based on what everyone feels most comfortable with, while also distributing similarly equal work load. These tasks will have deadlines, typically when each portion of the project is due, or earlier if other members’ parts depend on another person's portion.
+    - Handle disagreements
+        - We will handle disagreements by bringing them up to group members and through group discussion. If there is a disagreement, we will settle with a majority vote after hearing out all sides.
+
+## Section 2: Data Set
+1) We will be using a dataset from Kaggle regarding red wine quality classification. 
+    - https://www.kaggle.com/datasets/nareshbhat/wine-quality-binary-classification
+    - https://archive.ics.uci.edu/ml/datasets/wine+quality
+    - https://www.sciencedirect.com/science/article/pii/S0167923609001377?via%3Dihub 
+
+## Section 3: Questions of Interest
+1) Regression: Can the alcohol percentage of a wine be determined by the predictors in the dataset? Specifically, which predictors are most significant in determining the percentage of the wine?
+    - Response variable: Alcohol, a measurement of the amount of alcohol in the wine (vol.%)
+    - Most important predictors:
+        - Fixed acidity: content of tartaric acids (g/dm^3)
+        - Volatile acidity: content of acetic acid (g/dm^3)
+        - Citric acid: citric acid content (g/dm^3)
+        - Total sulfur dioxide: total sulfur dioxide content (mg/dm^3)
+        - pH: pH (1-14 scale)
+        - Sulphates: content of potassium sulfate (g/dm^3)
+    - We think this question is worth exploring because if a wine company was interested in making a wine with high or low alcohol content, they can look at this regression and figure out which values of the components of the wine they need to raise or lower to meet a certain alcohol percentage threshold. 
+2) Classification: Can we classify whether or not a wine observation has good or bad quality based on the predictors in the dataset 
+    - Response variable: Quality, which is a binary variable that is either good or bad. 
+    - The predictors for this question are fixed acidity (g(tartaric acid)/dm), volatile acidity (g(acetic acid)/dm3), citric acid (g/dm3), residual sugar (g/dm3), chlorides (g(sodium chloride)/dm3), free sulfur dioxide (mg/dm3), total sulfur dioxide (mg/dm3), density (g/cm3), pH, sulphates (g(potassium sulphate)/dm3), alcohol (vol.%).
+    - Most important predictors:
+        - Fixed acidity: content of tartaric acid (g/dm^3)
+        - Volatile acidity: content of acetic acid (g/dm^3)
+        - Citric acid: citric acid content (g/dm^3)
+        - Residual sugar: natural grape sugars leftover in a wine after the alcoholic fermentation finishes (g/dm^3)
+        - pH:  pH (1-14 scale)
+        - Alcohol percentage: A measurement of the amount of alcohol in the wine (vol.%)
+    - This question is worth exploring because we are interested in the factors that make go into wine quality. 
+
+## Section 4: Exploratory Data Analysis
+1) Plot 1
+    - From the graph it appears as though the strongest relationships are present between fixed acidity and citric acid, fixed acidity and density, fixed acidity and pH. Bad is represented by black dots, while good wine is represented with red dots. In general, better wines are categorized with higher alcohol content, lower densities, and lower volatile acidity.
+```{r, warning=FALSE, message=FALSE}
+library(readr)
+library(ggplot2)
+library(reshape2)
+library(dplyr)
+library(tidyr)
+
+wine <- read_csv("wine (1).csv")
+wine$quality<- factor(wine$quality)
+plot1<-pairs(wine[,1:11], col = c(1,2)[wine$quality], lower.panel=NULL)
+```
+
+2) Plot 2
+    - The boxplots give us a better understanding of the relationships between each of the predictors and the response variable. We get some background information on what the classification might result in based on a value of the predictor. For example, good wines tend to have higher alcohol content when looking at the median. We can also see that pH remains constant between bad and good quality wines.   
+```{r, warning=FALSE, message=FALSE}
+Data2 <- melt(wine, id = "quality") 
+
+ggplot(data = Data2, aes(x=variable, y=value)) + geom_boxplot(aes(fill=quality))+
+  facet_wrap( ~ variable, scales="free")
+```
+
+3) Summary Statistics
+    - Here are some basic summary statistics. For classification, it is important to note that this dataset is balanced.  
+```{r, warning=FALSE, message=FALSE}
+summary(wine)
+```
+
+4) Plot 3
+    - The violin plots give us another way of looking at the distributions of the predictors against the response variable. We can see where majority of observations lie for each predictor vs. response based on how wide the distributions are. In line with the boxplots, bad wines are concentrated around low values. Chlorides and residual sugars have very similar distributions, with majority of observations, for both bad and good wines, concentrating at the lower end.   
+```{r}
+ggplot(data = Data2, aes(x=variable, y=value)) + geom_violin(aes(fill=quality))+
+  facet_wrap( ~ variable, scales="free")
+```
+    
+5) Plot 4 and Correlations
+    - From the scatterplots and the correlation list, we can see that density appears to have a strong relationship with alcohol and could be a significant predictor. However, in the scatterplot it appears to be curved slightly which could signify it has an exponential relationship. We can also see that the amount of chlorides may have a relationship with the alcohol % although not as strong as density. There are a number of variables that do not appear to have a strong if at all relationship with the alcohol % including fixed acidity, residual sugar, free sulfur dioxide, and sulphates.
+```{r, warning=FALSE, message=FALSE}
+wine %>%
+  gather(-alcohol, key = "var", value = "value") %>%
+  ggplot(aes(x=value, y=alcohol)) + geom_point() + facet_wrap(~var, scales = "free")
+
+cor(wine$alcohol, wine[,1:10])
+```
+    
+6) Plot 5
+    - From the boxplot comparing quality of the alcohol and its % we can see that the median alcohol % for wines categorized as “good” is higher than that for “bad” wines. We can also see that there appear to be a number of outliers for wines that are “bad”.
+```{r}
+ggplot(data = wine, aes(x=quality, y=alcohol)) + geom_boxplot()
+```
+    
+    

@@ -1,0 +1,113 @@
+---
+title: "Project Milestone 4 Part 3"
+author: "Skye Jung"
+date: "2022-11-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Section 3: Shrinkage Methods
+
+## a) Data Cleaning
+```{r}
+library(glmnet)
+
+Data <-read.csv("/Users/skyejung/Desktop/stat 4630/wine.csv", header=T)
+Data$quality <- factor(Data$quality)
+
+x<-model.matrix(alcohol~.,data=Data)
+x<-model.matrix(alcohol~.,data=Data)[,-1]
+
+y<-Data$alcohol
+```
+
+## b) Threshold Value
+```{r}
+ridge.r<-glmnet::glmnet(x,y,alpha=0, lambda=0)
+##compare with OLS
+result<-lm(alcohol~.,data=Data)
+cbind(coefficients(result), coefficients(ridge.r))
+## not the same values, lower threshold
+
+ridge.r<-glmnet::glmnet(x,y,alpha=0, lambda=0, thresh = 1e-23)
+##compare with OLS
+cbind(coefficients(result), coefficients(ridge.r))
+```
+
+## c) Ridge Regression
+```{r}
+set.seed(4630)
+sample.data<-sample.int(nrow(Data), floor(.50*nrow(Data)), replace = F)
+x.train<-x[sample.data,]
+x.test<-x[-sample.data,]
+y.train<-y[sample.data]
+y.test<-y[-sample.data]
+train<-Data[sample.data, ]
+test<-Data[-sample.data, ]
+
+# i)
+set.seed(4630)
+cv.out<-glmnet::cv.glmnet(x.train,y.train,alpha=0, thresh = 1e-23)
+bestlam<-cv.out$lambda.min
+bestlam
+
+# ii)
+plot(cv.out)
+
+# iii)
+## All 11 predictors are left in the model.
+
+# iv)
+## Fixed acidity, Volatile acidity, Citric acid, Residual sugar, Chlorides, 
+## Free sulfur dioxide, Total sulfur dioxide, Density, pH, Sulphates, and Quality
+
+# v)
+ridge.mod<-glmnet::glmnet(x.train,y.train,alpha=0,lambda=bestlam, thresh = 1e-25)
+ridge.pred<-predict(ridge.mod,newx=x.test)
+mean((ridge.pred-y.test)^2)
+
+```
+
+## d) Lasso Regression
+```{r}
+
+# i)
+lasso.r<-glmnet::glmnet(x,y,alpha=1, lambda=0, thresh = 1e-23)
+
+set.seed(4630)
+cv.out.lasso<-glmnet::cv.glmnet(x.train,y.train,alpha=1, thresh = 1e-23)
+bestlam.lasso<-cv.out.lasso$lambda.min
+bestlam.lasso
+
+# ii)
+plot(cv.out.lasso)
+
+# iii)
+coef(cv.out.lasso)
+## 9 predictors are left in the model.
+
+# iv)
+## Fixed acidity, Citric acid, Residual sugar, Chlorides, 
+## Total sulfur dioxide, Density, pH, Sulphates, and Quality
+
+# v)
+lasso.mod<-glmnet::glmnet(x.train,y.train,alpha=1,lambda=bestlam.lasso, thresh = 1e-23)
+lasso.pred<-predict(lasso.mod,newx=x.test)
+mean((lasso.pred-y.test)^2)
+
+```
+
+## e) OLS Regression Test MSE
+```{r}
+result<-lm(alcohol~.,data=train)
+predicty <- predict(result,test)
+
+mean((predicty-test$alcohol)^2)
+```
+
+Conclusion found in google doc file
+
+

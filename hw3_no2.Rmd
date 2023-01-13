@@ -1,0 +1,40 @@
+---
+title: 'hw3 #2'
+author: "Akhil Havaldar"
+date: "10/11/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Question 2)
+```{r}
+gpa <- c(3.68, 3.42, 3.23, 3.87, 3.91, 3.67, 2.89, 3.14, 3.70, 3.56, 3.49, 3.02, 3.16, 3.76, 3.41)
+load("hw3_bootstrap_samples.RData")
+boot.samples
+
+# a) 
+quant <- quantile(gpa)
+iqr.gpa <- quant[4] - quant[2]    # calculating IQR by q3-q1
+#0.495 
+
+#b) 
+iqr.boot <- array(0,50)    # initializing array
+for (i in 1:50){
+  q <- quantile(boot.samples[,i])      # finding the quantiles for each boot sample
+  iq <- q[4] - q[2]                      # calculating iqr
+  iqr.boot[i] <- iq                      
+}
+
+print(sd(iqr.boot)) #0.1367592
+
+#c) 
+delta <- iqr.boot - iqr.gpa      # calculating delta
+conf <- quantile(delta, c(0.04,0.96))       # calculating 92% CI
+ci <- c(iqr.gpa-conf[2], iqr.gpa-conf[1])
+print(ci)         # (0.3184, 0.7706)
+
+```
+### d) 
+- To improve estimates, we would have to increase sample size, and increase the number of bootstrap samples. 

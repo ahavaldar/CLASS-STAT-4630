@@ -1,0 +1,175 @@
+---
+title: "Milestone 4 Part 5"
+author: "Hannah Douglas"
+date: "11/6/2022"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## a)
+```{r}
+library(readr)
+library(tree)
+
+Data<-read.csv("wine.csv", header=T)
+Data$quality<- factor(Data$quality)
+
+set.seed(4630)
+
+sample.data<-sample.int(nrow(Data), floor(.50*nrow(Data)), replace = F)
+train<-Data[sample.data, ]
+test<-Data[-sample.data, ]
+y.test<-test$quality
+```
+
+## b)
+### i)
+```{r}
+tree.class.train<-tree::tree(quality~., data=train)
+summary(tree.class.train)
+```
+
+### ii)
+11 terminal nodes were used in the tree creation. 
+
+### iii)
+The predictors used in the tree include alcohol, volatile acidity, sulphates, total.sulfur.dioxide, and free.sulfur.dioxide.
+
+### iv)
+```{r}
+plot(tree.class.train)
+text(tree.class.train, cex=0.6, pretty=0)
+```
+
+### v)
+The classification tree shows us the most important predictors in the classification of a wine as good or bad. The tree demonstrates that alcohol, volatile.acidity, sulphates, total.sulfur.dioxide, and free.sulfur.dioxide are the most important predictors of a wines classification. Specifically, we can see that alcohol content is the most important predictor, followed by sulphates and volatile.acidity. 
+
+### vi)
+```{r}
+tree.pred.test<-predict(tree.class.train, newdata=test, type="class")
+table(y.test, tree.pred.test)
+```
+
+### vii)
+```{r}
+error_rate<-(113+98)/(113+258+98+331)
+error_rate
+```
+
+### viii)
+```{r}
+fpr<-(113)/(113+258)
+fpr
+```
+
+### ix)
+```{r}
+fnr<-(98)/(98+331)
+fnr
+```
+
+### x)
+Lowering the threshold will increase the false positive rate, while increasing the threshold will increase the false negative rate. Because we are concerned with classifying a wine correctly as good or bad, we would not want to have significantly higher false positive rates or false negative rates, indicating a wine would be misclassified overly as good or bad respectively. Therefore, it is best to keep the threshold at 0.5.
+
+## c)
+### i)
+```{r}
+set.seed(4630)
+cv.class<-tree::cv.tree(tree.class.train, K=10, FUN=prune.misclass)
+tree.num.class<-cv.class$size[which.min(cv.class$dev)]
+prune.class<-tree::prune.misclass(tree.class.train, best=tree.num.class)
+summary(prune.class)
+```
+
+### ii)
+The tree has 7 terminal nodes.
+
+### iii)
+The predictors used in the tree include alcohol, volatile acidity, sulphates, and total.sulfur.dioxide, as shown in the summary output.
+
+### iv)
+```{r}
+plot(prune.class)
+text(prune.class, cex=0.75, pretty=0)
+```
+
+### v)
+The classification tree shows us the most important predictors in the classification of a wine as good or bad. The tree demonstrates that alcohol, volatile.acidity, sulphates, and total.sulfur.dioxide, are the most important predictors of a wines classification. Specifically, we can see that alcohol content is the most important predictor, followed by volatile.acidity and sulphates. Unlike the unpruned tree, free sulfur dioxide was not an important predictor. 
+
+### vi)
+```{r}
+tree.prune.test<-predict(prune.class, newdata=test, type="class")
+table(y.test, tree.prune.test)
+```
+
+### vii)
+```{r}
+error_rate2<-(126+90)/(126+90+339+245)
+error_rate2
+```
+
+### vii)
+```{r}
+fpr2<-126/(126+245)
+fpr2
+```
+
+### ix)
+```{r}
+fnr2<-90/(90+339)
+fnr2
+```
+
+### x)
+Because the FPR is significantly higher than the FNR, it may be a good idea to reduce the threshold. However, after experimenting with lowering the threshold, any change to lower the FPR significantly increases the FNR and slightly reduces the accuracy. Therefore, even though the FPR is significantly higher than the FNR, any reduction in the FPR will not reduce the error rate and will just significantly increase the FPR. Because we are interested in classification of a wine as good and bad equally, reducing the threshold does not benefit us. 
+Overall we can see that the pruned tree has a slightly higher error rate, FPR and a slightly lower FNR. Thus, overall the pruned tree does not perform better than the unpruned tree. 
+
+## d)
+### i)
+```{r}
+library(randomForest)
+set.seed(4630)
+rf.class<-randomForest::randomForest(quality~., data=train, mtry=3, importance=TRUE)
+randomForest::varImpPlot(rf.class)
+```
+After using mtry=3, because we have 11 predictors, so the square root of 11 rounded down is 3, we found similar results as before. Alcohol was again the most important predictor followed by sulphates, volatile.acidity, and total.sulfur.dioxide. Free.sulfur.dioxide, and citric.acid were the least important.
+
+### ii)
+```{r}
+pred.rf<-predict(rf.class,newdata=test)
+table(y.test,pred.rf)
+```
+
+### iii)
+```{r}
+error_rf<-(81+88)/(284+87+80+349)
+error_rf
+```
+
+### iv)
+```{r}
+fpr_rf<-88/(88+283)
+fpr_rf
+```
+
+### v)
+```{r}
+fnr_rf<-81/(81+348)
+fnr_rf
+```
+
+### vi)
+Lowering the threshold will increase the false positive rate, while increasing the threshold will increase the false negative rate. Because we are concerned with classifying a wine correctly as good or bad, we would not want to have significantly higher false positive rates or false negative rates, indicating a wine would be misclassified overly as good or bad respectively. Because the FPR and FNR are pretty close together it is best to keep the threshold at 0.5.
+
+## e)
+### ii)
+The models answer our question by showing us which predictors are most important in a wines classification. Overall, we found that alcohol was the most important predictor, followed by sulphates, volatile.acidity, and total.sulfur.dioxide. 
+
+### iii)
+Random Forests best answered our question because it had the highest accuracy, and also showed the most important predictors that I mentioned above. The findings were not surprising because we had initially suspected that alcohol content would be important in a wines classification. Additionally from our EDA we found that sulphates, volatile.acidity and total.sulfur.dioxide all had relatively different distributions for wines classification as good or bad, so it makes sense that varying values of these variables would influence a wines classification. 
+
+### iv)
+We were sometimes unsure of whether or not we should reduce or raise our threshold in order to change the accuracy, FPR, or FNR. Though in the end we decided to keep the threshold at 0.5 because any changes to it slightly reduced accuracy and increased the FNR a large amount. Because our research question is to find what predictors classify a wine as good AND bad, we are not especially interested in reducing the FPR or FNR, but rather reducing both of them. Besides this we did not face any challenges in this section.
